@@ -1,0 +1,12 @@
+.DS_Store*
+*.swp
+__pycache__
+build
+exports
+doc
+.idea*
+CMakeLists.txt.user
+.vscode*
+*.o
+config.mk
+how-did-i-configure

@@ -506,7 +506,7 @@ INCLUDES    = $INCLUDES
 DEFS        = $DEFS -DFTN_UNDERSCORE=$UNDERSCORE
 
 #uncomment below to enable performance profiling
-DEFS       += -DPROFILE -DPMPI
+# DEFS       += -DPROFILE -DPMPI
 #uncomment below to enable debugging
 #DEFS       += -DDEBUG=1
 
