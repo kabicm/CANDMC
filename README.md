@@ -26,7 +26,7 @@ Specific contents may be built individually,
 * all unit tests 'test', executables appear in bin/tests/
 * all benchmarks 'bench', executables appear in bin/benchmarks/
 
-**Install instructions:**
+**Installation instructions:**
 
 ```bash
 # load all the modules
