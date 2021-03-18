@@ -55,6 +55,16 @@ srun -N 32 -n 64 ./bin/benchmarks/lu_25d_tp_bench -n 16384 -b_sm 32 -b_lrg 128
 srun -N 32 -n 64 ./bin/benchmarks/lu_25d_pp_bench -n 16384 -b_sm 32 -b_lrg 128
 ```
 
+**Creating Piz Daint Scripts**
+
+You can specify parameters in scripts/params.ini. All combinations between the input parameters will be generated.
+Go to the root folder and create scripts with the following command
+` python3 scripts/generate_launch_files.py `
+Per default, it will only create commands for tournament pivoting. You can change this with either `--pivot part` for partial pivoting or `--pivot both` for both pivoting strategies. You can specify the output folder for the benchmarks with `--dir <path_to_folder>`. It will default to `./benchmarks`.
+
+After having created the bash scripts run the following to launch the jobs on Daint:
+`python3 scripts/launch_on_daint.py`
+
 **Accrediation:**
 
 Code is available under a two-clause BSD license.
