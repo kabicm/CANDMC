@@ -10,3 +10,4 @@ CMakeLists.txt.user
 *.o
 config.mk
 how-did-i-configure
+launch/*
