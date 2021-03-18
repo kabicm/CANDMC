@@ -11,6 +11,7 @@ from numpy import genfromtxt
 import configparser
 import math
 import argparse
+from datetime import datetime
 
 path_to_launch = './launch/'
 path_to_params = './scripts/params.ini'
@@ -19,14 +20,15 @@ output_path = 'benchmarks'
 
 def createBashPreface(P, algorithm):
     numNodes = math.ceil(P/2)
+    time = datetime.now().time()
     return '#!/bin/bash -l \n\
 #SBATCH --job-name=candmc-%s-p%d \n\
 #SBATCH --time=02:00:00 \n\
 #SBATCH --nodes=%d \n\
-#SBATCH --output=%s/%s-p%d.txt \n\
+#SBATCH --output=%s/%s-p%d-%s.txt \n\
 #SBATCH --constraint=mc \n\
 #SBATCH --account=g34 \n\n\
-export OMP_NUM_THREADS=18 \n\n' % (algorithm, P, numNodes, output_path, algorithm, P)
+export OMP_NUM_THREADS=18 \n\n' % (algorithm, P, numNodes, output_path, algorithm, P, time)
 
 # parse params.ini
 def readConfig(section):
