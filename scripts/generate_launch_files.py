@@ -77,12 +77,11 @@ def generateLaunchFile(P, N, B, r, algorithm, pivot):
                     numNodes = math.ceil(p/2)
                     # next we iterate over all possibilities and write the bash script
                     if pivot == 'both':
-                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_tp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -r %d \n' % (numNodes, p, n, r, b[0], b[1], reps)
-                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_pp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -r %d \n' % (numNodes, p, n, r, b[0], b[1], reps)
+                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_tp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d \nsrun -N %d -n %d ./bin/benchmarks/lu_25d_pp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d \n' % (numNodes, p, n, r, b[0], b[1], numNodes, p, n, r, b[0], b[1])
                     elif pivot == 'tour':
-                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_tp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -r %d \n' % (numNodes, p, n, r, b[0], b[1], reps)
+                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_tp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d \n' % (numNodes, p, n, r, b[0], b[1])
                     elif pivot == 'part':
-                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_pp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -r %d \n' % (numNodes, p, n, r, b[0], b[1], reps)
+                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_pp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d \n' % (numNodes, p, n, r, b[0], b[1])
                     else:
                         print('Please use an existing strategy (tour, part) or do not give a strategy at all')
                         raise Exception()
@@ -105,7 +104,7 @@ if __name__ == "__main__":
 
 
     parser.add_argument('--pivot', metavar='pivot', type=str, required=False,
-                    help='tour tournament part for partial pivoting, both for both',  default='both')
+                    help='tour tournament part for partial pivoting, both for both',  default='tour')
     args = vars(parser.parse_args())
 
     # parse the output directory path, and make the directories
