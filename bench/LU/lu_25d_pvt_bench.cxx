@@ -27,15 +27,16 @@
  * @param v1 the larger block size
  * @param PX the number of processors in x-direction on the grid
  * @param PY the number of processors in y-direction on the grid
+ * @param PZ the number of processors in z-direction, i.e. c_rep
  */
-void printTimings(std::vector<double> &timings, std::ostream &out, int N, int v0, int v1, int PX, int PY)
+void printTimings(std::vector<double> &timings, std::ostream &out, int N, int v0, int v1, int PX, int PY, int PZ)
 {
     out << "==========================" << std::endl;
     out << "    PROBLEM PARAMETERS:" << std::endl;
     out << "==========================" << std::endl;
     out << "Matrix size: " << N << std::endl;
     out << "Block sizes: " << v0 << "-" << v1 << std::endl;
-    out << "Processor grid: " << PX << " x " << PY << std::endl;
+    out << "Processor grid: " << PX << " x " << PY << "x" << PZ << std::endl;
     out << "Number of repetitions: " << timings.size() << std::endl;
     out << "--------------------------" << std::endl;
     out << "TIMINGS [ms] = ";
@@ -261,7 +262,7 @@ void lu_25d_pvt_bench(int64_t const         n,
   TAU_FSTOP(timer);
   
   if (myRank == 0){
-    printTimings(timings, std::cout, matrixDim, blockDim, big_blockDim, num_pes_dim, num_pes_dim);
+    printTimings(timings, std::cout, matrixDim, blockDim, big_blockDim, num_pes_dim, num_pes_dim, c_rep);
     //printf("Warmed up for %d iterations, benchmarked %d iterations\n", start_iter, num_iter);
     //printf("Time elapsed per iteration: %lf\n", sum_t/num_iter);
     //printf("Gigaflops: %lf\n", (2./3)*matrixDim*matrixDim*matrixDim/
