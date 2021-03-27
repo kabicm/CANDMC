@@ -1,14 +1,51 @@
 /* Copyright (c) Edgar Solomonik 2015, all rights reserved. This code is part of the CANDMC repository, protected under a two-clause BSD license. */
-#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <algorithm>
-#include <string>
 #include <math.h>
+
+#include <algorithm>
+#include <vector>
+#include <chrono>
+#include <iostream>
+#include <fstream>
+#include <string>
+
+#include <mpi.h>
+#include <omp.h>
+
 #include "CANDMC.h"
-#include "omp.h"
+
 
 #define MAX_OFF_DIAG    1.1
+
+/**
+ * @brief prints the timings to the desired stream
+ * @param out the desired stream (e.g. std::cout or a file)
+ * @param timings the vector containing the timings
+ * @param N the matrix dimension
+ * @param v0 the smaller block size
+ * @param v1 the larger block size
+ * @param PX the number of processors in x-direction on the grid
+ * @param PY the number of processors in y-direction on the grid
+ */
+void printTimings(std::vector<double> &timings, std::ostream &out, int N, int v0, int v1, int PX, int PY)
+{
+    out << "==========================" << std::endl;
+    out << "    PROBLEM PARAMETERS:" << std::endl;
+    out << "==========================" << std::endl;
+    out << "Matrix size: " << N << std::endl;
+    out << "Block sizes: " << v0 << "-" << v1 << std::endl;
+    out << "Processor grid: " << PX << " x " << PY << std::endl;
+    out << "Number of repetitions: " << timings.size() << std::endl;
+    out << "--------------------------" << std::endl;
+    out << "TIMINGS [ms] = ";
+    for (auto &time : timings) {
+        out << time << " ";
+    }
+    out << std::endl;
+    out << "Note: the warm-up run is NOT included in these timings." << std::endl;
+    out << "==========================" << std::endl;
+}
 
 /* benchmark parallel tournament pivoting
  * n is the test matrix dimension 
@@ -33,15 +70,15 @@ void lu_25d_pvt_bench(int64_t const         n,
   const int64_t big_blockDim = b_lrg;
 
   if (myRank == 0){ 
-    printf("BENCHMARKING LU FACOTRIZATION OF SQUARE MATRIX\n");
-    printf("MATRIX DIMENSION IS " PRId64 " ", matrixDim);
-    printf("BLOCK DIMENSION IS " PRId64 " ", blockDim);
-    printf("BIG BLOCK DIMENSION IS " PRId64 "\n", big_blockDim);
-    printf("REPLICATION FACTOR, C, IS %d\n", c_rep);
+    //printf("BENCHMARKING LU FACOTRIZATION OF SQUARE MATRIX\n");
+    //printf("MATRIX DIMENSION IS " PRId64 " ", matrixDim);
+    //printf("BLOCK DIMENSION IS " PRId64 " ", blockDim);
+    //printf("BIG BLOCK DIMENSION IS " PRId64 "\n", big_blockDim);
+    //printf("REPLICATION FACTOR, C, IS %d\n", c_rep);
 #ifdef USE_DCMF
     printf("USING DCMF FOR COMMUNICATION\n");
 #else
-    printf("USING MPI FOR COMMUNICATION\n");
+    //printf("USING MPI FOR COMMUNICATION\n");
 #endif
   }
 
@@ -54,9 +91,9 @@ void lu_25d_pvt_bench(int64_t const         n,
   const int num_pes_dim = sqrt(numPes/c_rep);
 
   if (myRank == 0){
-    printf("NUM X BLOCKS IS %d\n", num_blocks_dim);
+    //printf("NUM X BLOCKS IS %d\n", num_blocks_dim);
   //  printf("NUM Y BLOCKS IS %d\n", num_blocks_dim);
-    printf("NUM X PROCS IS %d\n", num_pes_dim);
+    //printf("NUM X PROCS IS %d\n", num_pes_dim);
   //  printf("NUM Y PROCS IS %d\n", num_pes_dim);
   }
 
@@ -135,8 +172,8 @@ void lu_25d_pvt_bench(int64_t const         n,
 #ifdef PARTIAL_PVT
     printf("BENCHMARKING LU WITH PARTIAL PIVOTING\n");
 #else
-    if (pvt) printf("BENCHMARKING LU WITH TOURNAMENT PIVOTING\n");
-    else printf("BENCHMARKING LU WITH NO PIVOTING (DIAGONALLY DOMINANT MATRIX)\n");
+    if (pvt) printf("BENCHMARKING LU WITH TOURNAMENT PIVOTING\n\n");
+    else printf("BENCHMARKING LU WITH NO PIVOTING (DIAGONALLY DOMINANT MATRIX)\n\n");
 #endif
   }
 
@@ -169,6 +206,10 @@ void lu_25d_pvt_bench(int64_t const         n,
   TAU_FSTART(first_iter);
 
   sum_t = 0.0;
+
+  std::vector<double> timings;
+  timings.reserve(num_iter);
+  std::chrono::_V2::system_clock::time_point tStart, tEnd;
 
   for (iter=0; iter<num_iter+start_iter; iter++){       
     srand48(seed*myRank+seed);
@@ -204,22 +245,27 @@ void lu_25d_pvt_bench(int64_t const         n,
         TAU_FSTART(timer);
       }
       MPI_Barrier(cdt_glb.cm);
-      start_t = MPI_Wtime();
+      tStart = std::chrono::high_resolution_clock::now();
+      //start_t = MPI_Wtime();
     }
     lu_25d_pvt(&p, mat_A, mat_P, buf_P, buffer, iter>0);
     if (iter >= start_iter){
-      end_t = MPI_Wtime();
+      //end_t = MPI_Wtime();
       MPI_Barrier(cdt_glb.cm);
-      sum_t +=end_t -start_t;
+      tEnd = std::chrono::high_resolution_clock::now();
+      auto timeInMs = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd-tStart).count();
+      timings.push_back(timeInMs);
+      //sum_t +=end_t -start_t;
     }
   }
   TAU_FSTOP(timer);
   
   if (myRank == 0){
-    printf("Warmed up for %d iterations, benchmarked %d iterations\n", start_iter, num_iter);
-    printf("Time elapsed per iteration: %lf\n", sum_t/num_iter);
-    printf("Gigaflops: %lf\n", (2./3)*matrixDim*matrixDim*matrixDim/
-                                (sum_t/num_iter)*1E-9);
+    printTimings(timings, std::cout, matrixDim, blockDim, big_blockDim, num_pes_dim, num_pes_dim);
+    //printf("Warmed up for %d iterations, benchmarked %d iterations\n", start_iter, num_iter);
+    //printf("Time elapsed per iteration: %lf\n", sum_t/num_iter);
+    //printf("Gigaflops: %lf\n", (2./3)*matrixDim*matrixDim*matrixDim/
+                                //(sum_t/num_iter)*1E-9);
   }
   FREE_CDT((&cdt_kdir));
   FREE_CDT((&cdt_row));
