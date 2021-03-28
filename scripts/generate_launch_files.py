@@ -23,7 +23,7 @@ def createBashPreface(P, algorithm):
     time = datetime.now().time()
     return '#!/bin/bash -l \n\
 #SBATCH --job-name=candmc-%s-p%d \n\
-#SBATCH --time=02:00:00 \n\
+#SBATCH --time=00:30:00 \n\
 #SBATCH --nodes=%d \n\
 #SBATCH --output=%s/%s-p%d-%s.txt \n\
 #SBATCH --constraint=mc \n\
@@ -38,8 +38,13 @@ def readConfig(section):
         print("Please add a %s section", (section))
         raise Exception()
 
+    P_info = []
     try:
         P = ast.literal_eval(config[section]['P'])
+        for p in P:
+            numP = p[0]
+            for i in range(1, len(p)):
+                P_info.append((numP, p[i]))
     except:
         print("Please add at least one number of processors P=[] (%s)" %(section))
         raise
@@ -65,25 +70,25 @@ def readConfig(section):
         print("One of the arrays in params.ini is empty, please add values")
         raise Exception()
     
-    return P, N, b, reps
+    return P_info, N, b, reps
     
 
 
 def generateLaunchFile(P, N, B, r, algorithm, pivot):
     for p in P:
-        filename = path_to_launch + 'launch_%s_%d.sh' %(algorithm, p)
+        filename = path_to_launch + 'launch_%s_%d.sh' %(algorithm, p[0])
         with open(filename, 'w') as f:
-            f.write(createBashPreface(p, algorithm))
+            f.write(createBashPreface(p[0], algorithm))
             for n in N:
                 for b in B:
-                    numNodes = math.ceil(p/2)
+                    numNodes = math.ceil(p[0]/2)
                     # next we iterate over all possibilities and write the bash script
                     if pivot == 'both':
-                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_tp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d \nsrun -N %d -n %d ./bin/benchmarks/lu_25d_pp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d \n' % (numNodes, p, n, r, b[0], b[1], numNodes, p, n, r, b[0], b[1])
+                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_tp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -c_rep %d \nsrun -N %d -n %d ./bin/benchmarks/lu_25d_pp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -c_rep %d \n' % (numNodes, p[0], n, r, b[0], b[1], p[1], numNodes, p[0], n, r, b[0], b[1], p[1])
                     elif pivot == 'tour':
-                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_tp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d \n' % (numNodes, p, n, r, b[0], b[1])
+                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_tp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -c_rep %d \n' % (numNodes, p[0], n, r, b[0], b[1], p[1])
                     elif pivot == 'part':
-                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_pp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d \n' % (numNodes, p, n, r, b[0], b[1])
+                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_pp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -c_rep %d \n' % (numNodes, p[0], n, r, b[0], b[1], p[1])
                     else:
                         print('Please use an existing strategy (tour, part) or do not give a strategy at all')
                         raise Exception()

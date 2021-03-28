@@ -36,7 +36,7 @@ void printTimings(std::vector<double> &timings, std::ostream &out, int N, int v0
     out << "==========================" << std::endl;
     out << "Matrix size: " << N << std::endl;
     out << "Block sizes: " << v0 << "-" << v1 << std::endl;
-    out << "Processor grid: " << PX << " x " << PY << "x" << PZ << std::endl;
+    out << "Processor grid: " << PX << "x" << PY << "x" << PZ << std::endl;
     out << "Number of repetitions: " << timings.size() << std::endl;
     out << "--------------------------" << std::endl;
     out << "TIMINGS [ms] = ";
