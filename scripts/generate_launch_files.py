@@ -43,8 +43,7 @@ def readConfig(section):
         P = ast.literal_eval(config[section]['P'])
         for p in P:
             numP = p[0]
-            for i in range(1, len(p)):
-                P_info.append((numP, p[i]))
+            P_info.append((numP, p[1:]))
     except:
         print("Please add at least one number of processors P=[] (%s)" %(section))
         raise
@@ -81,19 +80,20 @@ def generateLaunchFile(P, N, B, r, algorithm, pivot):
             f.write(createBashPreface(p[0], algorithm))
             for n in N:
                 for b in B:
-                    numNodes = math.ceil(p[0]/2)
-                    # next we iterate over all possibilities and write the bash script
-                    if pivot == 'both':
-                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_tp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -c_rep %d \nsrun -N %d -n %d ./bin/benchmarks/lu_25d_pp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -c_rep %d \n' % (numNodes, p[0], n, r, b[0], b[1], p[1], numNodes, p[0], n, r, b[0], b[1], p[1])
-                    elif pivot == 'tour':
-                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_tp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -c_rep %d \n' % (numNodes, p[0], n, r, b[0], b[1], p[1])
-                    elif pivot == 'part':
-                        cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_pp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -c_rep %d \n' % (numNodes, p[0], n, r, b[0], b[1], p[1])
-                    else:
-                        print('Please use an existing strategy (tour, part) or do not give a strategy at all')
-                        raise Exception()
+                    for pz in p[1]:
+                        numNodes = math.ceil(p[0]/2)
+                        # next we iterate over all possibilities and write the bash script
+                        if pivot == 'both':
+                            cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_tp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -c_rep %d \nsrun -N %d -n %d ./bin/benchmarks/lu_25d_pp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -c_rep %d \n' % (numNodes, p[0], n, r, b[0], b[1], pz, numNodes, p[0], n, r, b[0], b[1], pz)
+                        elif pivot == 'tour':
+                            cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_tp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -c_rep %d \n' % (numNodes, p[0], n, r, b[0], b[1], pz)
+                        elif pivot == 'part':
+                            cmd = 'srun -N %d -n %d ./bin/benchmarks/lu_25d_pp_bench -n %d -num_iter %d -b_sm %d -b_lrg %d -c_rep %d \n' % (numNodes, p[0], n, r, b[0], b[1], pz)
+                        else:
+                            print('Please use an existing strategy (tour, part) or do not give a strategy at all')
+                            raise Exception()
 
-                    f.write(cmd)
+                        f.write(cmd)
     return
 
 # We use the convention that we ALWAYS use n nodes and 2n ranks
