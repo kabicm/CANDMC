@@ -1,0 +1,9 @@
+algorithm,library,N,N_base,P,grid,unit,type,value,blocksize
+candmc,candmc,262144,-,1024,1,bytes,weak,73383640359936,32x512
+candmc,candmc,32768,-,1024,4,bytes,weak,1089988510720,32x512
+candmc,candmc,131072,-,1024,4,bytes,strong,16734323609600,32x512
+candmc,candmc,16384,-,1024,1,bytes,strong,302967595008,32x512
+candmc,candmc,32768,-,1024,1,bytes,weak,1176853139968,32x512
+candmc,candmc,262144,-,1024,4,bytes,weak,66465210226688,32x512
+candmc,candmc,131072,-,1024,1,bytes,strong,18413893604352,32x512
+candmc,candmc,16384,-,1024,4,bytes,strong,286996970496,32x512
