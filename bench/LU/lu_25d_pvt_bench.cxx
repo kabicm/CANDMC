@@ -29,7 +29,7 @@
  * @param PY the number of processors in y-direction on the grid
  * @param PZ the number of processors in z-direction, i.e. c_rep
  */
-void printTimings(std::vector<double> &timings, std::ostream &out, int N, int v0, int v1, int PX, int PY, int PZ)
+void printTimings(std::vector<double> &timings, std::ostream &out, int N, int v0, int v1, int PX, int PY, int PZ, std::string type = "other")
 {
     out << "==========================" << std::endl;
     out << "    PROBLEM PARAMETERS:" << std::endl;
@@ -46,6 +46,16 @@ void printTimings(std::vector<double> &timings, std::ostream &out, int N, int v0
     out << std::endl;
     out << "Note: the warm-up run is NOT included in these timings." << std::endl;
     out << "==========================" << std::endl;
+
+    auto N_base = type=="weak" ? N/PX : N;
+    int P = PX * PY * PZ;
+    std::string grid = std::to_string(PX) + "x" + std::to_string(PY) + "x" + std::to_string(PZ);
+
+    std::string block_range = std::to_string(v0) + "-" + std::to_string(v1);
+
+    for (auto &time : timings) {
+        out << "_result_ lu,candmc," << N << "," << N_base << "," << P << "," << grid << ",time," << type << "," << time << "," << block_range << std::endl;
+    }
 }
 
 /* benchmark parallel tournament pivoting
@@ -97,6 +107,16 @@ void lu_25d_pvt_bench(int64_t const         n,
     //printf("NUM X PROCS IS %d\n", num_pes_dim);
   //  printf("NUM Y PROCS IS %d\n", num_pes_dim);
   }
+
+  if (num_pes_dim*num_pes_dim != numPes/c_rep || numPes%c_rep > 0 || c_rep > num_pes_dim){
+    if (myRank == 0) 
+      printf("ERROR: PROCESSOR GRID MISMATCH\n");
+    ABORT;
+  }
+  //  printf("NUM Y BLOCKS IS %d\n", num_blocks_dim);
+    //printf("NUM X PROCS IS %d\n", num_pes_dim);
+  //  printf("NUM Y PROCS IS %d\n", num_pes_dim);
+  // }
 
   if (num_pes_dim*num_pes_dim != numPes/c_rep || numPes%c_rep > 0 || c_rep > num_pes_dim){
     if (myRank == 0) 
@@ -209,7 +229,7 @@ void lu_25d_pvt_bench(int64_t const         n,
   sum_t = 0.0;
 
   std::vector<double> timings;
-  timings.reserve(num_iter);
+  timings.reserve(num_iter + 1);
   std::chrono::_V2::system_clock::time_point tStart, tEnd;
 
   for (iter=0; iter<num_iter+start_iter; iter++){       
@@ -255,7 +275,8 @@ void lu_25d_pvt_bench(int64_t const         n,
       MPI_Barrier(cdt_glb.cm);
       tEnd = std::chrono::high_resolution_clock::now();
       auto timeInMs = std::chrono::duration_cast<std::chrono::milliseconds>(tEnd-tStart).count();
-      timings.push_back(timeInMs);
+      if (iter > 0)
+          timings.push_back(timeInMs);
       //sum_t +=end_t -start_t;
     }
   }
@@ -298,16 +319,6 @@ int main(int argc, char **argv) {
  // printf("[%d] export MIC_KMP_AFFINITY=explicit,granularity=fine,proclist=[%d-%d:1]",myRank,offset+1,offset+240/SHARE_MIC);
   offset = 0;
   offset += (60/SHARE_MIC)*(myRank%SHARE_MIC);
-  sprintf(sout, "MIC_KMP_PLACE_THREADS=30c,4t,%dO",offset);
-  if (myRank == 0)
-    printf("[%d] export MIC_KMP_PLACE_THREADS=30c,4t,%dO\n",myRank,offset);
-  putenv(sout);
-  char hostname[128];
-  gethostname(hostname, 128);
-  if (myRank == 0)
-    printf("[%d] hostname is %s\n",myRank,hostname);
-  omp_set_num_threads(8);
-  if (myRank == 0)
     printf("threads=%d\n",omp_get_max_threads());
 #endif
 
@@ -318,6 +329,7 @@ int main(int argc, char **argv) {
 
   if (getCmdOption(argv, argv+argc, "-num_iter")){
     num_iter = atoi(getCmdOption(argv, argv+argc, "-num_iter"));
+    ++num_iter;
     if (num_iter <= 0) num_iter = 1;
   } else num_iter = 3;
 
